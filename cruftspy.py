@@ -18,50 +18,56 @@ import tarfile
 import sys
 import os
 import re
+from typing import List, Optional, Tuple
 
 already_seen = set()
 
-def classify_logs(layer, fname):
+def classify_logs(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for path in ('var/log/',):
     if fname.startswith(path):
       seen_key = (layer, 'classify_logs', path)
       if seen_key not in already_seen:
         already_seen.add(seen_key)
         return ("Log files", path)
+  return None
 
-def classify_tmp(layer, fname):
+def classify_tmp(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for path in ('tmp/', 'var/tmp/'):
     if fname.startswith(path):
       seen_key = (layer, 'classify_tmp', path)
       if seen_key not in already_seen:
         already_seen.add(seen_key)
         return ("Tmp files", path)
+  return None
 
-def classify_apk_cache(layer, fname):
+def classify_apk_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for path in ('var/cache/apk/',):
     if fname.startswith(path):
       seen_key = (layer, 'classify_apk_cache', path)
       if seen_key not in already_seen:
         already_seen.add(seen_key)
         return ("APK cache", path)
+  return None
 
-def classify_apt_cache(layer, fname):
+def classify_apt_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for path in ('var/lib/apt/lists/',):
     if fname.startswith(path):
       seen_key = (layer, 'classify_apt_cache', path)
       if seen_key not in already_seen:
         already_seen.add(seen_key)
         return ("APT lists cache", path)
+  return None
 
-def classify_dnf_cache(layer, fname):
+def classify_dnf_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for path in ('var/cache/dnf/', 'var/lib/dnf/repos/'):
     if fname.startswith(path):
       seen_key = (layer, 'classify_dnf_cache', path)
       if seen_key not in already_seen:
         already_seen.add(seen_key)
         return ("DNF cache", path)
+  return None
 
-def classify_bundler_cache(layer, fname):
+def classify_bundler_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   if '.bundle/cache' in fname:
     base_path = fname[:(fname.index('.bundle/cache'))] or '(root)'
     base_path += '.bundle/cache'
@@ -69,8 +75,9 @@ def classify_bundler_cache(layer, fname):
     if seen_key not in already_seen:
       already_seen.add(seen_key)
       return ("Bundler cache", base_path)
+  return None
 
-def classify_yarn_cache(layer, fname):
+def classify_yarn_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   if '.cache/yarn' in fname:
     base_path = fname[:(fname.index('.cache/yarn'))] or '(root)'
     base_path += '.cache/yarn'
@@ -78,8 +85,9 @@ def classify_yarn_cache(layer, fname):
     if seen_key not in already_seen:
       already_seen.add(seen_key)
       return ("Yarn cache", base_path)
+  return None
 
-def classify_bundle_cache(layer, fname):
+def classify_bundle_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   m = re.search('/ruby/[^/]*/cache/[^/]*\.gem', fname)
   if m:
     base_path = fname[:m.start(0)] or '(root)'
@@ -87,8 +95,9 @@ def classify_bundle_cache(layer, fname):
     if seen_key not in already_seen:
       already_seen.add(seen_key)
       return ("Bundle cached gems", base_path)
+  return None
 
-def classify_git_repo(layer, fname):
+def classify_git_repo(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   if '.git/objects/' in fname:
     base_path = fname[:(fname.index('.git/objects/'))] or '(root)'
     base_path += '.git/'
@@ -96,8 +105,9 @@ def classify_git_repo(layer, fname):
     if seen_key not in already_seen:
       already_seen.add(seen_key)
       return ("Git repository", base_path)
+  return None
 
-def classify(layer, fname):
+def classify(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   for f in (
       classify_logs,
       classify_tmp,
@@ -111,16 +121,17 @@ def classify(layer, fname):
     r = f(layer, fname)
     if r:
       return r
+  return None
 
 mags = ['B', 'KB', 'MB', 'GB', 'TB']
-def calc_size(tf, path):
+def calc_size(tf: tarfile.TarFile, path: str) -> int:
   total = 0
   for ti_entry in tf.getmembers():
     if ti_entry.name.startswith(path):
       total += ti_entry.size
   return total
 
-def format_size(size):
+def format_size(size: float) -> str:
   mag = 0
   while size > 512:
     mag += 1
@@ -130,7 +141,7 @@ def format_size(size):
   else:
     return f"{size:.1f} {mags[mag]}"
 
-def main(args):
+def main(args: List[str]) -> None:
   if len(args) < 2:
     print(f"usage: {args[0]} docker-image.tar")
     return
