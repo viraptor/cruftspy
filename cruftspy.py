@@ -77,6 +77,16 @@ def classify_bundler_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
       return ("Bundler cache", base_path)
   return None
 
+def classify_sprockets_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
+  if 'cache/assets/sprockets/' in fname:
+    base_path = fname[:(fname.index('cache/assets/sprockets/'))] or '(root)'
+    base_path += 'cache/assets/sprockets/'
+    seen_key = (layer, 'classify_sprockets_cache', base_path)
+    if seen_key not in already_seen:
+      already_seen.add(seen_key)
+      return ("Sprockets cache", base_path)
+  return None
+
 def classify_yarn_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
   if '.cache/yarn' in fname:
     base_path = fname[:(fname.index('.cache/yarn'))] or '(root)'
@@ -85,6 +95,16 @@ def classify_yarn_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
     if seen_key not in already_seen:
       already_seen.add(seen_key)
       return ("Yarn cache", base_path)
+  return None
+
+def classify_pip_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
+  if '.cache/pip' in fname:
+    base_path = fname[:(fname.index('.cache/pip'))] or '(root)'
+    base_path += '.cache/pip'
+    seen_key = (layer, 'classify_pip_cache', base_path)
+    if seen_key not in already_seen:
+      already_seen.add(seen_key)
+      return ("Pip cache", base_path)
   return None
 
 def classify_bundle_cache(layer: str, fname: str) -> Optional[Tuple[str, str]]:
@@ -114,10 +134,12 @@ def classify(layer: str, fname: str) -> Optional[Tuple[str, str]]:
       classify_bundler_cache,
       classify_bundle_cache,
       classify_yarn_cache,
+      classify_pip_cache,
       classify_git_repo,
       classify_apk_cache,
       classify_apt_cache,
-      classify_dnf_cache):
+      classify_dnf_cache,
+      classify_sprockets_cache):
     r = f(layer, fname)
     if r:
       return r
